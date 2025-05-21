@@ -28,7 +28,10 @@ locations = []
 service = Service(executable_path="chromedriver.exe")
 driver = webdriver.Chrome(service=service)
 
-driver.get("https://www.doctolib.fr/")
+place_input = "saint-avold"
+query_input = "osteopathe"
+
+driver.get(f"https://www.doctolib.fr/search?location={place_input}&speciality={query_input}")
 
 time.sleep(1)
 
@@ -45,27 +48,29 @@ except Exception as NotFound:
 
 time.sleep(1.5) # let some time to the next page to appear
 
-# access to the query input (search bar)
-try:
-    query_INPUT = WebDriverWait(driver, webdriverwaiting_seconds).until(
-        EC.presence_of_element_located((By.CLASS_NAME, "searchbar-query-input"))
-    )
-    query_INPUT.clear()
-    query_INPUT.send_keys("Ostéopathe")
-except:
-    raise KeyError("Script didn't find the query input.")
+# finally useless because you can access it easily with the url
 
-# access to the place input (search bar)
-try:
-    place_INPUT = WebDriverWait(driver, webdriverwaiting_seconds).until(
-        EC.presence_of_element_located((By.CLASS_NAME, "searchbar-place-input"))
-    )
-    place_INPUT.clear()
-    place_INPUT.send_keys("Saint-Avold")
-    time.sleep(0.5) # let the time to the drop-down list to appear
-    place_INPUT.send_keys(Keys.ENTER + Keys.ENTER)
-except:
-    raise KeyError("Script didn't find the place input.")
+# access to the query input (search bar)
+#try:
+#    query_INPUT = WebDriverWait(driver, webdriverwaiting_seconds).until(
+#        EC.presence_of_element_located((By.CLASS_NAME, "searchbar-query-input"))
+#    )
+#    query_INPUT.clear()
+#    query_INPUT.send_keys("Ostéopathe")
+#except:
+#    raise KeyError("Script didn't find the query input.")
+#
+## access to the place input (search bar)
+#try:
+#    place_INPUT = WebDriverWait(driver, webdriverwaiting_seconds).until(
+#        EC.presence_of_element_located((By.CLASS_NAME, "searchbar-place-input"))
+#    )
+#    place_INPUT.clear()
+#    place_INPUT.send_keys("Saint-Avold")
+#    time.sleep(0.5) # let the time to the drop-down list to appear
+#    place_INPUT.send_keys(Keys.ENTER + Keys.ENTER)
+#except:
+#    raise KeyError("Script didn't find the place input.")
 
 
 """"""
@@ -76,7 +81,7 @@ except:
 # url at this time : https://www.doctolib.fr/search?location=saint-avold&speciality=osteopathe
 # url of the next page : https://www.doctolib.fr/search?location=saint-avold&speciality=osteopathe&page=2
 
-time.sleep(3) # even if we have a "WebDriverWait", the element can be found but without any data yet, so we need to be careful with it.
+time.sleep(2) # even if we have a "WebDriverWait", the element can be found but without any data yet, so we need to be careful with it.
 
 try:
     nb_of_results = WebDriverWait(driver, webdriverwaiting_seconds).until(
@@ -92,11 +97,12 @@ nb_of_pages = int(int(nb_of_results) / 20) + 1
 # fetching each practitioner's data
 try:
     """Fetching NAMES"""
-    noms = driver.find_elements(By.CSS_SELECTOR, "h2.dl-text-bold")
+    names = driver.find_elements(By.CSS_SELECTOR, "h2.dl-text-bold")
+    page_names = [name.text for name in names]
 
     """Fetching DESIGNATIONS"""
     cards = driver.find_elements(By.CSS_SELECTOR, "div.flex.flex-col.w-full")
-    designations = []
+    page_designations = []
     i=0
     for card in cards:
         try:
@@ -104,7 +110,7 @@ try:
             if i<2: # because the 2 elements which aren't practioners' data are fetched by this (no other solution)
                 pass
             else:
-                designations.append(p_elem.text)
+                page_designations.append(p_elem.text)
             i+=1
         except NoSuchElementException:
             pass
@@ -116,7 +122,6 @@ try:
 except Exception as e:
     print("Erreur :", e)
     traceback.print_exc()
-
 
 time.sleep(10)
 driver.quit()
